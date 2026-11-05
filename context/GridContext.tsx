@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 
 export type BlockType = "Tavern" | "Mountain" | "Forest";
 
@@ -9,6 +9,33 @@ export interface VoxelBlockData {
   x: number;
   z: number;
   type: BlockType;
+}
+
+export interface AdjacentBlock {
+  block_type: BlockType;
+  type: BlockType;
+  x: number;
+  z: number;
+  direction: string;
+}
+
+export interface ContextCardState {
+  isOpen: boolean;
+  blockType: BlockType;
+  x: number;
+  z: number;
+  adjacentBlocks: AdjacentBlock[];
+  isLoading: boolean;
+  loreText: string | null;
+  error: string | null;
+  backendOnline: boolean | null;
+  payload: {
+    block_type: BlockType;
+    x: number;
+    z: number;
+    adjacent_blocks: AdjacentBlock[];
+  };
+  timestamp: string;
 }
 
 export interface NarrativeEvent {
@@ -25,40 +52,115 @@ interface GridContextType {
   setSelectedType: (type: BlockType) => void;
   hoveredCoord: { x: number; z: number } | null;
   setHoveredCoord: (coord: { x: number; z: number } | null) => void;
-  placeBlock: (x: number, z: number) => void;
+  placeBlock: (x: number, z: number) => Promise<void>;
   removeBlock: (x: number, z: number) => void;
   clearGrid: () => void;
   narrativeLogs: NarrativeEvent[];
+  contextCard: ContextCardState | null;
+  closeContextCard: () => void;
+  retryGenerateLore: () => Promise<void>;
 }
 
 const GridContext = createContext<GridContextType | undefined>(undefined);
 
-const TAVERN_LORE = [
-  "The Warm Hearth tavern raises its cedar beams. Hearth fires crackle as travelers seek shelter.",
-  "Bards tune their lutes in the newly built tavern, singing songs of distant ruins.",
-  "An iron lantern is hung outside the inn. Fresh cider and venison stew are served.",
-  "A secretive wanderer in a hooded cloak takes a booth in the corner.",
+const NEIGHBOR_DELTAS = [
+  { dx: 0, dz: -1, direction: "North" },
+  { dx: 1, dz: 0, direction: "East" },
+  { dx: 0, dz: 1, direction: "South" },
+  { dx: -1, dz: 0, direction: "West" },
+  { dx: 1, dz: -1, direction: "North-East" },
+  { dx: -1, dz: -1, direction: "North-West" },
+  { dx: 1, dz: 1, direction: "South-East" },
+  { dx: -1, dz: 1, direction: "South-West" },
 ];
 
-const MOUNTAIN_LORE = [
-  "Sheer obsidian spires thrust through the bedrock, catching the pale sky.",
-  "The crags echo with howling winds. Ancient strata reveal veins of raw ore.",
-  "Perpetual snow dusts the highest jagged ridges of the newly risen peak.",
-  "Gargoyles of natural stone watch over the jagged mountain passes.",
-];
+export const getAdjacentBlocks = (
+  x: number,
+  z: number,
+  blocksMap: Map<string, VoxelBlockData>
+): AdjacentBlock[] => {
+  const adjacent: AdjacentBlock[] = [];
+  for (const { dx, dz, direction } of NEIGHBOR_DELTAS) {
+    const nx = x + dx;
+    const nz = z + dz;
+    const key = `${nx},${nz}`;
+    const neighbor = blocksMap.get(key);
+    if (neighbor) {
+      adjacent.push({
+        block_type: neighbor.type,
+        type: neighbor.type,
+        x: nx,
+        z: nz,
+        direction,
+      });
+    }
+  }
+  return adjacent;
+};
 
-const FOREST_LORE = [
-  "Deep emerald canopy expands with ancient mossy roots and whispering pines.",
-  "Bioluminescent blossoms unfurl along winding subterranean moss beds.",
-  "Spirits of the deep timber awaken, rustling through the shadowed undergrowth.",
-  "Canopy crowns interlock, shading the fertile soil in quiet mystique.",
-];
+export const generateFallbackLore = (
+  blockType: BlockType,
+  x: number,
+  z: number,
+  adjacent: AdjacentBlock[]
+): string => {
+  if (adjacent.length === 0) {
+    switch (blockType) {
+      case "Tavern":
+        return `An isolated tavern, "The Far Traveler", lights its lanterns at coordinates (${x}, ${z}). Hearth fires crackle as wanderers seek refuge on the frontier.`;
+      case "Mountain":
+        return `A solitary stone peak thrusts into the heavens at (${x}, ${z}), shrouded in cold winds and untouched obsidian silence.`;
+      case "Forest":
+        return `An ancient lone grove sprouts at (${x}, ${z}), its primordial roots sinking deep into the fertile earth with whispering pines.`;
+    }
+  }
+
+  const adjTypes = adjacent.map((a) => a.block_type);
+  const hasMountain = adjTypes.includes("Mountain");
+  const hasForest = adjTypes.includes("Forest");
+  const hasTavern = adjTypes.includes("Tavern");
+
+  if (blockType === "Tavern") {
+    if (hasMountain && hasForest) {
+      return `Nestled between towering alpine ridges and whispering woodlands at (${x}, ${z}), this Tavern thrives as a legendary frontier crossroads for mountaineers, woodcutters, and wandering spellweavers.`;
+    }
+    if (hasMountain) {
+      return `Built into the rocky foothills of the adjacent Mountain peak at (${x}, ${z}), this Tavern serves spiced mead and warmth to weary climbers seeking shelter from high-altitude storms.`;
+    }
+    if (hasForest) {
+      return `Under the lush whispering canopy of the neighbouring Forest at (${x}, ${z}), this woodland inn offers quiet rest, herbal ales, and shelter from the untamed wild.`;
+    }
+    return `Expanding the settlement alongside another Tavern at (${x}, ${z}), the sounds of lively fiddles and clinking tankards echo through the valley.`;
+  }
+
+  if (blockType === "Mountain") {
+    if (hasForest) {
+      return `Sheer granite crags rise steeply above the neighboring Forest at (${x}, ${z}). Mountain mists spill downward, feeding deep mosses and alpine pine glades.`;
+    }
+    if (hasTavern) {
+      return `Towering jagged ridges cast long evening shadows over the adjacent Tavern at (${x}, ${z}), protecting the settlement from severe winds.`;
+    }
+    return `The mountain range expands at (${x}, ${z}), creating an imposing barrier of rugged gray rock and icy peaks.`;
+  }
+
+  // Forest
+  if (hasMountain) {
+    return `Verdant pine groves scale the rocky cliffs of the nearby Mountain at (${x}, ${z}), their ancient roots digging deep into fissures of stone.`;
+  }
+  if (hasTavern) {
+    return `Ancient trees encircle the local Tavern at (${x}, ${z}), shielding its warm hearth fires with dense green leaves and peaceful shade.`;
+  }
+  return `The emerald forest expands across (${x}, ${z}), its interconnected canopies forming a vast, enchanted wilderness.`;
+};
 
 export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const gridSize = 10;
   const [blocks, setBlocks] = useState<Map<string, VoxelBlockData>>(new Map());
   const [selectedType, setSelectedType] = useState<BlockType>("Tavern");
   const [hoveredCoord, setHoveredCoord] = useState<{ x: number; z: number } | null>(null);
+  const [contextCard, setContextCard] = useState<ContextCardState | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const [narrativeLogs, setNarrativeLogs] = useState<NarrativeEvent[]>([
     {
       id: "genesis",
@@ -75,36 +177,180 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
       text,
       type,
     };
-    setNarrativeLogs((prev) => [entry, ...prev.slice(0, 19)]);
+    setNarrativeLogs((prev) => [entry, ...prev.slice(0, 24)]);
   }, []);
 
+  const closeContextCard = useCallback(() => {
+    setContextCard((prev) => (prev ? { ...prev, isOpen: false } : null));
+  }, []);
+
+  const sendGenerateLoreRequest = useCallback(
+    async (
+      blockType: BlockType,
+      x: number,
+      z: number,
+      adjacent: AdjacentBlock[]
+    ) => {
+      // Abort any previous pending request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const payload = {
+        block_type: blockType,
+        x,
+        z,
+        adjacent_blocks: adjacent,
+      };
+
+      const timestamp = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      // Show Context Card in loading state
+      setContextCard({
+        isOpen: true,
+        blockType,
+        x,
+        z,
+        adjacentBlocks: adjacent,
+        isLoading: true,
+        loreText: null,
+        error: null,
+        backendOnline: null,
+        payload,
+        timestamp,
+      });
+
+      try {
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+        const response = await fetch("http://localhost:8000/generate-lore", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        let loreResult = "";
+        try {
+          const data = await response.json();
+          if (typeof data === "string") {
+            loreResult = data;
+          } else if (typeof data === "object" && data !== null) {
+            loreResult =
+              data.lore ||
+              data.text ||
+              data.generated_lore ||
+              data.narrative ||
+              data.story ||
+              data.content ||
+              data.message ||
+              JSON.stringify(data, null, 2);
+          }
+        } catch {
+          loreResult = await response.text();
+        }
+
+        if (!loreResult) {
+          loreResult = generateFallbackLore(blockType, x, z, adjacent);
+        }
+
+        setContextCard((prev) =>
+          prev
+            ? {
+                ...prev,
+                isLoading: false,
+                loreText: loreResult,
+                backendOnline: true,
+                error: null,
+              }
+            : null
+        );
+
+        addNarrative(`[${x}, ${z}] ${loreResult}`, blockType);
+      } catch (err: any) {
+        if (err.name === "AbortError" && controller.signal.aborted) {
+          console.log("Lore request was aborted/cancelled.");
+          return;
+        }
+
+        console.warn("Backend at http://localhost:8000/generate-lore unreachable:", err);
+        const fallbackText = generateFallbackLore(blockType, x, z, adjacent);
+
+        setContextCard((prev) =>
+          prev
+            ? {
+                ...prev,
+                isLoading: false,
+                loreText: fallbackText,
+                backendOnline: false,
+                error: "Backend offline at http://localhost:8000. Displaying spatial fallback lore.",
+              }
+            : null
+        );
+
+        addNarrative(`[${x}, ${z}] ${fallbackText}`, blockType);
+      }
+    },
+    [addNarrative]
+  );
+
   const placeBlock = useCallback(
-    (x: number, z: number) => {
+    async (x: number, z: number) => {
       const key = `${x},${z}`;
+      const existing = blocks.get(key);
+
+      // If clicking existing block with the same type, remove it
+      if (existing && existing.type === selectedType) {
+        setBlocks((prev) => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+        addNarrative(`Demolished ${selectedType} at tile [${x}, ${z}].`, "System");
+        closeContextCard();
+        return;
+      }
+
+      // Update blocks state
+      const newBlock: VoxelBlockData = { id: key, x, z, type: selectedType };
       setBlocks((prev) => {
         const next = new Map(prev);
-        const existing = next.get(key);
-
-        if (existing && existing.type === selectedType) {
-          // Clicking an existing block of the same type removes it
-          next.delete(key);
-          addNarrative(`Demolished ${selectedType} at tile [${x}, ${z}].`, "System");
-        } else {
-          next.set(key, { id: key, x, z, type: selectedType });
-          const loreList =
-            selectedType === "Tavern"
-              ? TAVERN_LORE
-              : selectedType === "Mountain"
-              ? MOUNTAIN_LORE
-              : FOREST_LORE;
-          const randomLore = loreList[Math.floor(Math.random() * loreList.length)];
-          addNarrative(`[${x}, ${z}] ${randomLore}`, selectedType);
-        }
+        next.set(key, newBlock);
         return next;
       });
+
+      // Calculate adjacent blocks around (x, z)
+      const adjacent = getAdjacentBlocks(x, z, blocks);
+
+      // Fire lore request and show Context Card
+      await sendGenerateLoreRequest(selectedType, x, z, adjacent);
     },
-    [selectedType, addNarrative]
+    [selectedType, blocks, addNarrative, closeContextCard, sendGenerateLoreRequest]
   );
+
+  const retryGenerateLore = useCallback(async () => {
+    if (!contextCard) return;
+    await sendGenerateLoreRequest(
+      contextCard.blockType,
+      contextCard.x,
+      contextCard.z,
+      contextCard.adjacentBlocks
+    );
+  }, [contextCard, sendGenerateLoreRequest]);
 
   const removeBlock = useCallback(
     (x: number, z: number) => {
@@ -117,14 +363,18 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return next;
       });
+      if (contextCard && contextCard.x === x && contextCard.z === z) {
+        closeContextCard();
+      }
     },
-    [addNarrative]
+    [addNarrative, contextCard, closeContextCard]
   );
 
   const clearGrid = useCallback(() => {
     setBlocks(new Map());
     addNarrative("Grid cleared. The realm is a blank slate.", "System");
-  }, [addNarrative]);
+    closeContextCard();
+  }, [addNarrative, closeContextCard]);
 
   return (
     <GridContext.Provider
@@ -139,6 +389,9 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeBlock,
         clearGrid,
         narrativeLogs,
+        contextCard,
+        closeContextCard,
+        retryGenerateLore,
       }}
     >
       {children}
@@ -151,4 +404,3 @@ export const useGrid = () => {
   if (!context) throw new Error("useGrid must be used within a GridProvider");
   return context;
 };
-

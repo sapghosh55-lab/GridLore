@@ -6,27 +6,30 @@ import { ScrollText, ChevronDown, ChevronUp } from "lucide-react";
 
 export const NarrativePanel: React.FC = () => {
   const { narrativeLogs } = useGrid();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
-    <aside className="absolute top-20 right-6 z-20 w-80 flex flex-col bg-dark-950/85 backdrop-blur-md rounded-2xl border border-dark-700/80 shadow-2xl overflow-hidden transition-all duration-300">
+    <aside className="fixed bottom-24 right-6 z-20 w-80 flex flex-col bg-dark-950/85 backdrop-blur-md rounded-2xl border border-dark-700/80 shadow-2xl overflow-hidden transition-all duration-300">
       <div
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-between px-4 py-3 border-b border-dark-800 bg-dark-900/60 cursor-pointer hover:bg-dark-900/80 transition-colors"
+        className="flex items-center justify-between px-4 py-2.5 border-b border-dark-800 bg-dark-900/70 cursor-pointer hover:bg-dark-900/90 transition-colors"
       >
         <div className="flex items-center gap-2">
           <ScrollText className="w-4 h-4 text-neon-purple" />
           <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
-            Spatial Chronicle
+            Chronicle History
           </h2>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-dark-800 text-gray-400 font-mono">
+            {narrativeLogs.length}
+          </span>
         </div>
         <button className="text-gray-400 hover:text-white">
-          {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+          {collapsed ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
 
       {!collapsed && (
-        <div className="max-h-[360px] overflow-y-auto p-3 space-y-2 text-xs">
+        <div className="max-h-[260px] overflow-y-auto p-3 space-y-2 text-xs">
           {narrativeLogs.map((log) => (
             <div
               key={log.id}
@@ -54,4 +57,3 @@ export const NarrativePanel: React.FC = () => {
     </aside>
   );
 };
-

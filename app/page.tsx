@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { GridProvider } from "@/context/GridContext";
 import { Header } from "@/components/ui/Header";
 import { Toolbar } from "@/components/ui/Toolbar";
+import { ContextCard } from "@/components/ui/ContextCard";
 import { NarrativePanel } from "@/components/ui/NarrativePanel";
 
 // Dynamic import with SSR disabled to guarantee smooth Three.js WebGL canvas initialization
@@ -28,10 +29,10 @@ export default function Home() {
       <main className="w-screen h-screen relative bg-dark-950 overflow-hidden">
         <Header />
         <GridScene />
+        <ContextCard />
         <NarrativePanel />
         <Toolbar />
       </main>
     </GridProvider>
   );
 }
-
