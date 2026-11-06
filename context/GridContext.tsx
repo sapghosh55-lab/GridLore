@@ -27,6 +27,8 @@ export interface ContextCardState {
   adjacentBlocks: AdjacentBlock[];
   isLoading: boolean;
   loreText: string | null;
+  tier?: string | null;
+  similarityScores?: { quick_dialogue?: number; deep_historical_lore?: number } | null;
   error: string | null;
   backendOnline: boolean | null;
   payload: {
@@ -43,6 +45,7 @@ export interface NarrativeEvent {
   timestamp: string;
   text: string;
   type: BlockType | "System";
+  tier?: string | null;
 }
 
 interface GridContextType {
@@ -118,7 +121,6 @@ export const generateFallbackLore = (
   const adjTypes = adjacent.map((a) => a.block_type);
   const hasMountain = adjTypes.includes("Mountain");
   const hasForest = adjTypes.includes("Forest");
-  const hasTavern = adjTypes.includes("Tavern");
 
   if (blockType === "Tavern") {
     if (hasMountain && hasForest) {
@@ -137,18 +139,12 @@ export const generateFallbackLore = (
     if (hasForest) {
       return `Sheer granite crags rise steeply above the neighboring Forest at (${x}, ${z}). Mountain mists spill downward, feeding deep mosses and alpine pine glades.`;
     }
-    if (hasTavern) {
-      return `Towering jagged ridges cast long evening shadows over the adjacent Tavern at (${x}, ${z}), protecting the settlement from severe winds.`;
-    }
-    return `The mountain range expands at (${x}, ${z}), creating an imposing barrier of rugged gray rock and icy peaks.`;
+    return `Towering jagged ridges cast long evening shadows across (${x}, ${z}), protecting the surrounding lowlands from severe arctic winds.`;
   }
 
   // Forest
   if (hasMountain) {
     return `Verdant pine groves scale the rocky cliffs of the nearby Mountain at (${x}, ${z}), their ancient roots digging deep into fissures of stone.`;
-  }
-  if (hasTavern) {
-    return `Ancient trees encircle the local Tavern at (${x}, ${z}), shielding its warm hearth fires with dense green leaves and peaceful shade.`;
   }
   return `The emerald forest expands across (${x}, ${z}), its interconnected canopies forming a vast, enchanted wilderness.`;
 };
@@ -170,15 +166,19 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
   ]);
 
-  const addNarrative = useCallback((text: string, type: BlockType | "System") => {
-    const entry: NarrativeEvent = {
-      id: Math.random().toString(36).substring(2, 9),
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      text,
-      type,
-    };
-    setNarrativeLogs((prev) => [entry, ...prev.slice(0, 24)]);
-  }, []);
+  const addNarrative = useCallback(
+    (text: string, type: BlockType | "System", tier?: string | null) => {
+      const entry: NarrativeEvent = {
+        id: Math.random().toString(36).substring(2, 9),
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        text,
+        type,
+        tier,
+      };
+      setNarrativeLogs((prev) => [entry, ...prev.slice(0, 24)]);
+    },
+    []
+  );
 
   const closeContextCard = useCallback(() => {
     setContextCard((prev) => (prev ? { ...prev, isOpen: false } : null));
@@ -191,7 +191,6 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
       z: number,
       adjacent: AdjacentBlock[]
     ) => {
-      // Abort any previous pending request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -220,6 +219,8 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         adjacentBlocks: adjacent,
         isLoading: true,
         loreText: null,
+        tier: null,
+        similarityScores: null,
         error: null,
         backendOnline: null,
         payload,
@@ -245,12 +246,16 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         let loreResult = "";
+        let tier: string | null = null;
+        let similarityScores = null;
+
         try {
           const data = await response.json();
           if (typeof data === "string") {
             loreResult = data;
           } else if (typeof data === "object" && data !== null) {
             loreResult =
+              data.dummy_lore ||
               data.lore ||
               data.text ||
               data.generated_lore ||
@@ -259,6 +264,8 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
               data.content ||
               data.message ||
               JSON.stringify(data, null, 2);
+            tier = data.tier || null;
+            similarityScores = data.similarity_scores || null;
           }
         } catch {
           loreResult = await response.text();
@@ -274,16 +281,17 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 ...prev,
                 isLoading: false,
                 loreText: loreResult,
+                tier,
+                similarityScores,
                 backendOnline: true,
                 error: null,
               }
             : null
         );
 
-        addNarrative(`[${x}, ${z}] ${loreResult}`, blockType);
+        addNarrative(`[${x}, ${z}] ${loreResult}`, blockType, tier);
       } catch (err: any) {
         if (err.name === "AbortError" && controller.signal.aborted) {
-          console.log("Lore request was aborted/cancelled.");
           return;
         }
 
@@ -296,13 +304,14 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 ...prev,
                 isLoading: false,
                 loreText: fallbackText,
+                tier: "Offline Fallback Tier",
                 backendOnline: false,
                 error: "Backend offline at http://localhost:8000. Displaying spatial fallback lore.",
               }
             : null
         );
 
-        addNarrative(`[${x}, ${z}] ${fallbackText}`, blockType);
+        addNarrative(`[${x}, ${z}] ${fallbackText}`, blockType, "Offline Fallback");
       }
     },
     [addNarrative]
@@ -313,7 +322,6 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const key = `${x},${z}`;
       const existing = blocks.get(key);
 
-      // If clicking existing block with the same type, remove it
       if (existing && existing.type === selectedType) {
         setBlocks((prev) => {
           const next = new Map(prev);
@@ -325,7 +333,6 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Update blocks state
       const newBlock: VoxelBlockData = { id: key, x, z, type: selectedType };
       setBlocks((prev) => {
         const next = new Map(prev);
@@ -333,10 +340,7 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return next;
       });
 
-      // Calculate adjacent blocks around (x, z)
       const adjacent = getAdjacentBlocks(x, z, blocks);
-
-      // Fire lore request and show Context Card
       await sendGenerateLoreRequest(selectedType, x, z, adjacent);
     },
     [selectedType, blocks, addNarrative, closeContextCard, sendGenerateLoreRequest]
