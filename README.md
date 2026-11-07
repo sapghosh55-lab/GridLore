@@ -1,118 +1,166 @@
 <div align="center">
 
 # 🌌 GridLore
-### **Build a world. Let the world tell its story.**
+### Build a world. Let the world tell its story.
 
-A spatial storytelling canvas where every place you create can become the beginning of a narrative.
+A spatial storytelling engine where the geography you sculpt becomes the prompt for the narrative that follows.
 
-**GeNarrative Clash 2026 · Narrative & Screenplay Track**  
-**Submission stage:** 50% pre-build
+**GeNarrative Clash 2026**  
+**Track:** Narrative & Screenplay  
+**Submission Stage:** 50% Pre-Build
 
 </div>
 
 ---
 
-## The story starts with a place
+## ✨ The Idea
 
-A tavern beside a mountain is more than two objects on a map. It suggests travelers, danger, trade, secrets—and stories waiting to happen.
+A tavern beside a mountain is not just a layout choice—it is a story seed.
 
-**GridLore is a browser-based world-building prototype that turns a creator’s spatial choices into narrative context.** Instead of starting with a blank chat box, you shape a world on an isometric canvas. GridLore uses the things you place—and the relationships between them—to help guide the story that emerges.
+**GridLore** is a browser-based world-building prototype that turns spatial composition into narrative context. Instead of writing a prompt in a blank chat box, the creator physically designs the world on an interactive 3D grid. Each placed object, terrain shift, and neighbor relationship influences the story, mood, and lore that emerge.
 
-> **You are the worldbuilder. GridLore is your narrative co-pilot.**
+This project explores a new creative workflow:
 
-## Why GridLore?
+- The human remains the architect of the world.
+- The system acts as a narrative co-pilot.
+- AI responds to spatial meaning, not just text.
+- Storytelling begins from place, not from a prompt alone.
 
-Generative AI can produce endless text, but a creator still needs to provide direction, continuity, and a sense of place. GridLore explores a more hands-on starting point: let the world itself become the prompt.
+> The map becomes the memory.  
+> The world becomes the prompt.
 
-- **Create spatially:** place world elements on a 3D grid.
-- **Give the story context:** let the setting and nearby elements inform the narrative request.
-- **Keep the human in charge:** you choose what exists, where it belongs, and what the world means.
-- **Route with intent:** a semantic backend classifies incoming context and selects a lightweight or deeper generation path (currently simulated).
+---
 
-## The 50% pre-build
+## 🎯 Why this fits the theme
 
-This submission establishes the foundation for the live sprint. The app is a prototype: its AI response tiers are **simulated**, not live model integrations.
+This project sits at the intersection of human creativity and generative AI.
 
-### Built for this submission
+GridLore does not replace the author. It scaffolds the creative process:
 
-- **Isometric world canvas** — a 10×10 grid rendered with React Three Fiber.
-- **Placeable world elements** — select and place elements such as a tavern, mountain, or forest.
-- **Reactive context card** — a dark interface with neon purple and cyan accents that responds to canvas interactions.
-- **Semantic routing foundation** — a FastAPI backend uses `sentence-transformers/all-MiniLM-L6-v2` and cosine similarity to classify incoming context.
-- **Simulated routing tiers** — lightweight requests and deeper worldbuilding requests are directed to different demo paths.
+- You decide what exists in the world.
+- You decide how the world is structured.
+- The AI helps interpret the resulting narrative possibilities.
 
-### Planned for the live sprint
+This makes the tool collaborative, intentional, and spatially grounded—turning world design into a story-generation interface.
 
-- Connect the fast lane to a local **Ollama + Gemma 2 2B** setup for dialogue and micro-lore.
-- Connect the heavy lane to the **Groq Llama 3.3 70B API** for broader world history and complex narrative generation.
-- Refine spatial prompts to include grid coordinates, neighboring elements, and biome context.
+---
 
-These integrations are planned work—not part of the current pre-build. The sprint is scheduled for **November 21, 2026**.
+## 🧠 What is currently built
 
-## How it works
+This repository contains the structural foundation and routing architecture for the prototype.
 
-```text
-Creator places world elements
-            ↓
-The canvas provides spatial context
-            ↓
-FastAPI semantic router classifies the request
-            ↓
-A simulated fast or deep response path is selected
-            ↓
-The context card shows the result
-```
+### Frontend
+- 10×10 isometric voxel-style world canvas
+- React + Next.js interface
+- 3D block placement using React Three Fiber
+- Dark neon UI with cinematic visual styling
+- Context card that reacts to placed elements
 
-## Run locally
+### Backend
+- FastAPI server
+- Semantic routing system using sentence-transformers
+- Cosine similarity-based classification of incoming world context
+- Simulated “fast lane” and “deep lore” response paths
 
-You’ll need **Python 3** and **Node.js/npm**. Start the backend and frontend in separate terminals.
+### Demo logic
+- A tavern or local settlement triggers a lightweight, immediate narrative response.
+- A mountain, ruins, or larger world-building pattern triggers a more layered narrative path.
+- The routing logic is currently a working prototype layer, designed to support final AI model integration.
 
-### 1. Start the backend
+---
 
+## 🏗️ Tech Stack
+
+### Frontend
+- Next.js 14
+- React
+- Tailwind CSS
+- Three.js
+- React Three Fiber
+- Drei
+
+### Backend
+- Python
+- FastAPI
+- Uvicorn
+- SentenceTransformers
+- NumPy
+
+---
+
+## 🚀 Run locally
+
+You’ll need two terminals running side by side: one for the backend, one for the frontend.
+
+### 1) Start the backend
 ```bash
 cd backend
 pip install fastapi uvicorn sentence-transformers numpy
 uvicorn main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`.
+Backend runs at:
+```bash
+http://localhost:8000
+```
 
-### 2. Start the frontend
-
+### 2) Start the frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser.
+Frontend runs at:
+```bash
+http://localhost:3000
+```
 
-### 3. Try the canvas
+### 3) Use the app
+- Select a block from the toolbar
+- Place it on the grid
+- Observe the context card update based on spatial choices and routed intent
 
-1. Select an element from the toolbar.
-2. Click a tile on the grid to place it.
-3. Check the context card for the response from the prototype’s routing flow.
+---
 
-## Built with
+## 🔜 Next phase: live sprint
 
-| Frontend | Backend |
-| --- | --- |
-| Next.js 14 · React · Tailwind CSS | Python · FastAPI · Uvicorn |
-| Three.js · React Three Fiber · Drei | Sentence Transformers · NumPy |
+The final build will move beyond semantic classification into real generative storytelling.
 
-## What’s next
+### Planned integrations
+- **Tier 1:** Local Ollama + Gemma 2 2B
+  - for fast dialogue and micro-lore generation
+- **Tier 2:** Groq Llama 3.3 70B API
+  - for deeper world history and large-scale narrative output
+- **Prompt engineering**
+  - incorporate spatial coordinates, nearby elements, and biome logic for richer continuity
 
-The live sprint focuses on moving from a routing demo to a generative narrative loop: connect the two model tiers, pass richer spatial context into prompts, and make the stories respond meaningfully to the worlds creators build.
+The goal is to transform GridLore from a world-building prototype into a living narrative engine that understands place, context, and story continuity.
 
-## Hackathon
+---
 
-Built with ❤️ for **GeNarrative Clash 2026**  
-**Track:** Narrative & Screenplay · **Stage:** 50% pre-build
+## 🏁 Project status
+
+This is a 50% pre-build submission for the hackathon, focused on:
+
+- interaction design
+- spatial storytelling concept
+- architecture and routing logic
+- prototype demonstration of AI-assisted narrative response generation
+
+We are building the foundation for the final live sprint.
+
+---
+
+## ❤️ Built for
+
+**GeNarrative Clash 2026**  
+**Narrative & Screenplay Track**
 
 ---
 
 <div align="center">
 
-**Shape the map. Spark the story.**
+**Shape the world. Trigger the story.**
 
 </div>
