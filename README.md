@@ -1,83 +1,118 @@
-🌌 GridLore: Spatial Narrative Engine
+<div align="center">
 
-A GeNarrative Clash 2026 Hackathon Project
-Track: Narrative & Screenplay
-Status: 50% Pre-Build Stage (Online Submission)
+# 🌌 GridLore
+### **Build a world. Let the world tell its story.**
 
-📖 The Concept
+A spatial storytelling canvas where every place you create can become the beginning of a narrative.
 
-GridLore is an interactive, browser-based world-building canvas where the geography you sculpt dictates the story that is written. It acts as a generative co-pilot for game designers, Dungeon Masters, or fantasy authors.
+**GeNarrative Clash 2026 · Narrative & Screenplay Track**  
+**Submission stage:** 50% pre-build
 
-Instead of typing text prompts into a standard chatbox, the human creator physically builds a 3D environment. As they place assets (like a tavern next to a mountain), the system detects the spatial relationships and generates the underlying lore, history, and NPC dialogue specific to those exact geographical coordinates.
+</div>
 
-🎯 How It Fits The Theme ("Where GenAI meets human creativity")
+---
 
-GridLore does not replace the author; it provides scaffolding. The human remains the architect, making all structural, aesthetic, and spatial decisions. The GenAI simply acts as a smart memory bank and co-author, eliminating the friction of tracking continuity and tedious lore-writing across sprawling maps.
+## The story starts with a place
 
-🚀 Current State: The 50% Pre-Build
+A tavern beside a mountain is more than two objects on a map. It suggests travelers, danger, trade, secrets—and stories waiting to happen.
 
-In accordance with the GeNarrative Clash 50/50 rule, this repository contains the structural foundation and routing architecture.
+**GridLore is a browser-based world-building prototype that turns a creator’s spatial choices into narrative context.** Instead of starting with a blank chat box, you shape a world on an isometric canvas. GridLore uses the things you place—and the relationships between them—to help guide the story that emerges.
 
-What is currently built and working:
+> **You are the worldbuilder. GridLore is your narrative co-pilot.**
 
-The 3D Canvas (Frontend): A Next.js 14 application rendering a 10x10 isometric voxel grid using React Three Fiber. Users can select and place blocks (Tavern, Mountain, Forest) on the grid.
+## Why GridLore?
 
-The UI Shell: A strict dark-mode interface with neon purple and cyan accents, featuring a reactive "Context Card" that triggers upon block placement.
+Generative AI can produce endless text, but a creator still needs to provide direction, continuity, and a sense of place. GridLore explores a more hands-on starting point: let the world itself become the prompt.
 
-The Semantic Router (Backend): A Python FastAPI server that acts as a "traffic cop." It uses sentence-transformers/all-MiniLM-L6-v2 to calculate cosine similarity on incoming block data.
+- **Create spatially:** place world elements on a 3D grid.
+- **Give the story context:** let the setting and nearby elements inform the narrative request.
+- **Keep the human in charge:** you choose what exists, where it belongs, and what the world means.
+- **Route with intent:** a semantic backend classifies incoming context and selects a lightweight or deeper generation path (currently simulated).
 
-Dummy Routing Logic: The backend successfully classifies intent. Lightweight requests (e.g., Tavern = quick dialogue) route to a simulated "Local/Fast" tier, while deep worldbuilding requests (e.g., Mountain = geographical history) route to a simulated "Cloud/Heavy" tier, returning dummy JSON text to the frontend.
+## The 50% pre-build
 
-🛠️ Tech Stack (So Far)
+This submission establishes the foundation for the live sprint. The app is a prototype: its AI response tiers are **simulated**, not live model integrations.
 
-Frontend: Next.js 14 (App Router), Tailwind CSS, Three.js, React Three Fiber (@react-three/fiber), Drei (@react-three/drei).
+### Built for this submission
 
-Backend: Python 3, FastAPI, Uvicorn, SentenceTransformers (Hugging Face).
+- **Isometric world canvas** — a 10×10 grid rendered with React Three Fiber.
+- **Placeable world elements** — select and place elements such as a tavern, mountain, or forest.
+- **Reactive context card** — a dark interface with neon purple and cyan accents that responds to canvas interactions.
+- **Semantic routing foundation** — a FastAPI backend uses `sentence-transformers/all-MiniLM-L6-v2` and cosine similarity to classify incoming context.
+- **Simulated routing tiers** — lightweight requests and deeper worldbuilding requests are directed to different demo paths.
 
-💻 How to Run Locally
+### Planned for the live sprint
 
-You will need two terminal windows to run the brain (backend) and the canvas (frontend) simultaneously.
+- Connect the fast lane to a local **Ollama + Gemma 2 2B** setup for dialogue and micro-lore.
+- Connect the heavy lane to the **Groq Llama 3.3 70B API** for broader world history and complex narrative generation.
+- Refine spatial prompts to include grid coordinates, neighboring elements, and biome context.
 
-1. Start the Backend (FastAPI)
+These integrations are planned work—not part of the current pre-build. The sprint is scheduled for **November 21, 2026**.
 
-Navigate to the backend directory:
+## How it works
 
+```text
+Creator places world elements
+            ↓
+The canvas provides spatial context
+            ↓
+FastAPI semantic router classifies the request
+            ↓
+A simulated fast or deep response path is selected
+            ↓
+The context card shows the result
+```
+
+## Run locally
+
+You’ll need **Python 3** and **Node.js/npm**. Start the backend and frontend in separate terminals.
+
+### 1. Start the backend
+
+```bash
 cd backend
 pip install fastapi uvicorn sentence-transformers numpy
 uvicorn main:app --reload
+```
 
+The API will be available at `http://localhost:8000`.
 
-The backend will run on http://localhost:8000
+### 2. Start the frontend
 
-2. Start the Frontend (Next.js)
-
-Open a new terminal and navigate to the frontend directory:
-
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
+Open `http://localhost:3000` in your browser.
 
-The frontend will run on http://localhost:3000
+### 3. Try the canvas
 
-3. Test the Engine
+1. Select an element from the toolbar.
+2. Click a tile on the grid to place it.
+3. Check the context card for the response from the prototype’s routing flow.
 
-Open http://localhost:3000 in your browser.
+## Built with
 
-Select a block from the bottom toolbar.
+| Frontend | Backend |
+| --- | --- |
+| Next.js 14 · React · Tailwind CSS | Python · FastAPI · Uvicorn |
+| Three.js · React Three Fiber · Drei | Sentence Transformers · NumPy |
 
-Click any tile on the 3D grid.
+## What’s next
 
-Watch the Context Card on the right populate with the dynamically routed response from the backend!
+The live sprint focuses on moving from a routing demo to a generative narrative loop: connect the two model tiers, pass richer spatial context into prompts, and make the stories respond meaningfully to the worlds creators build.
 
-🏁 Next Steps: The 50% Live Sprint (Nov 21, 2026)
+## Hackathon
 
-For the final 6-hour offline hackathon sprint, we will replace the backend dummy endpoints with live Generative AI models:
+Built with ❤️ for **GeNarrative Clash 2026**  
+**Track:** Narrative & Screenplay · **Stage:** 50% pre-build
 
-Tier 1 Integration (Fast Lane): Connect a local Ollama instance running Gemma 2 2B for instant, low-latency dialogue and micro-lore generation.
+---
 
-Tier 2 Integration (Heavy Lane): Connect the Groq Llama 3.3 70B API for complex, overarching historical text generation.
+<div align="center">
 
-Prompt Engineering: Finalize the spatial context prompt templates so the models can read exact grid coordinates and adjacent biomes for deep continuity.
+**Shape the map. Spark the story.**
 
-Built with ❤️ for GeNarrative Clash 2026
+</div>
