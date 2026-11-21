@@ -6,6 +6,7 @@ import { Header } from "@/components/ui/Header";
 import { Toolbar } from "@/components/ui/Toolbar";
 import { ContextCard } from "@/components/ui/ContextCard";
 import { NarrativePanel } from "@/components/ui/NarrativePanel";
+import { WorldHistorySidebar } from "@/components/ui/WorldHistorySidebar";
 
 // Dynamic import with SSR disabled to guarantee smooth Three.js WebGL canvas initialization
 const GridScene = dynamic(
@@ -28,6 +29,7 @@ export default function Home() {
     <GridProvider>
       <main className="w-screen h-screen relative bg-dark-950 overflow-hidden">
         <Header />
+        <WorldHistorySidebar />
         <GridScene />
         <ContextCard />
         <NarrativePanel />

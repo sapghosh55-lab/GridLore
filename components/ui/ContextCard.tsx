@@ -19,6 +19,7 @@ import {
   Home,
   Mountain,
   Trees,
+  Scroll,
 } from "lucide-react";
 
 const BLOCK_ICONS: Record<BlockType, React.ReactNode> = {
@@ -82,10 +83,10 @@ export const ContextCard: React.FC = () => {
 
   return (
     <div
-      className={`fixed top-20 right-6 z-30 w-[410px] max-w-[calc(100vw-3rem)] rounded-2xl p-5 backdrop-blur-xl transition-all duration-300 ${
+      className={`fixed top-20 right-6 z-30 w-[420px] max-w-[calc(100vw-3rem)] rounded-2xl p-5 backdrop-blur-xl transition-all duration-300 ${
         isLoading
           ? "bg-[#0b0716]/90 border border-neon-purple shadow-[0_0_30px_rgba(138,43,226,0.65),inset_0_0_15px_rgba(138,43,226,0.25)]"
-          : "bg-[#080911]/90 border border-neon-cyan shadow-[0_0_25px_rgba(0,255,255,0.4),inset_0_0_15px_rgba(0,255,255,0.12)]"
+          : "bg-[#080911]/92 border border-neon-cyan shadow-[0_0_25px_rgba(0,255,255,0.4),inset_0_0_15px_rgba(0,255,255,0.12)]"
       }`}
     >
       {/* Top Header Bar */}
@@ -164,7 +165,7 @@ export const ContextCard: React.FC = () => {
         </div>
 
         {adjacentBlocks.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
+          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto sleek-scrollbar pr-1">
             {adjacentBlocks.map((adj, i) => (
               <span
                 key={i}
@@ -196,7 +197,7 @@ export const ContextCard: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-bold text-neon-purple tracking-wider uppercase flex items-center gap-1.5">
-                <span>Routing Semantic Intent</span>
+                <span>Routing Spatial Intent</span>
                 <span className="flex gap-0.5">
                   <span className="w-1 h-1 rounded-full bg-neon-purple animate-bounce [animation-delay:-0.3s]" />
                   <span className="w-1 h-1 rounded-full bg-neon-purple animate-bounce [animation-delay:-0.15s]" />
@@ -204,7 +205,7 @@ export const ContextCard: React.FC = () => {
                 </span>
               </div>
               <div className="text-[10px] text-purple-300/80 font-mono">
-                Computing Cosine Sim with all-MiniLM-L6-v2...
+                Generating narrative via routed AI tier...
               </div>
             </div>
           </div>
@@ -282,10 +283,30 @@ export const ContextCard: React.FC = () => {
             </div>
           )}
 
-          {/* Lore Body Text */}
-          <p className="text-sm text-slate-100 leading-relaxed font-sans bg-dark-950/40 p-3 rounded-lg border border-dark-800/80">
-            {loreText}
-          </p>
+          {/* Formatted Lore Narrative Content with Sleek Neon Purple Scrollbar */}
+          <div className="rounded-xl bg-dark-950/80 p-3.5 border border-dark-800 shadow-inner">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase text-gray-400 mb-2 pb-1.5 border-b border-dark-800/80">
+              <span className="flex items-center gap-1.5 text-neon-cyan font-semibold">
+                <Scroll className="w-3 h-3 text-neon-cyan" />
+                Generated Chronicle
+              </span>
+              <span className="text-gray-500 font-mono">
+                {loreText ? `${loreText.length} chars` : "--"}
+              </span>
+            </div>
+
+            <div className="max-h-[220px] overflow-y-auto sleek-scrollbar pr-2 space-y-2.5 text-sm text-slate-100 leading-relaxed font-sans whitespace-pre-line selection:bg-neon-purple/40">
+              {loreText ? (
+                loreText.split("\n\n").map((paragraph, idx) => (
+                  <p key={idx} className="text-slate-200">
+                    {paragraph.trim()}
+                  </p>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">No lore narrative recorded yet.</p>
+              )}
+            </div>
+          </div>
 
           {/* Connection Status Indicator & Payload Inspector Toggle */}
           <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-gray-400">
@@ -320,7 +341,7 @@ export const ContextCard: React.FC = () => {
 
           {/* Expandable JSON Payload Inspector */}
           {showPayload && (
-            <div className="mt-2 p-2.5 rounded-lg bg-dark-950 border border-dark-800 overflow-x-auto text-[10px] font-mono text-cyan-300/90 max-h-40">
+            <div className="mt-2 p-2.5 rounded-lg bg-dark-950 border border-dark-800 overflow-x-auto text-[10px] font-mono text-cyan-300/90 max-h-40 sleek-scrollbar">
               <pre>{JSON.stringify(payload, null, 2)}</pre>
             </div>
           )}

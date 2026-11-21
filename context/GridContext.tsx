@@ -19,6 +19,17 @@ export interface AdjacentBlock {
   direction: string;
 }
 
+export interface WorldHistoryItem {
+  id: string;
+  blockType: BlockType;
+  x: number;
+  z: number;
+  lore: string;
+  truncatedLore: string;
+  tier?: string | null;
+  timestamp: string;
+}
+
 export interface ContextCardState {
   isOpen: boolean;
   blockType: BlockType;
@@ -59,9 +70,11 @@ interface GridContextType {
   removeBlock: (x: number, z: number) => void;
   clearGrid: () => void;
   narrativeLogs: NarrativeEvent[];
+  worldHistory: WorldHistoryItem[];
   contextCard: ContextCardState | null;
   closeContextCard: () => void;
   retryGenerateLore: () => Promise<void>;
+  openHistoryInCard: (item: WorldHistoryItem) => void;
 }
 
 const GridContext = createContext<GridContextType | undefined>(undefined);
@@ -155,6 +168,7 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedType, setSelectedType] = useState<BlockType>("Tavern");
   const [hoveredCoord, setHoveredCoord] = useState<{ x: number; z: number } | null>(null);
   const [contextCard, setContextCard] = useState<ContextCardState | null>(null);
+  const [worldHistory, setWorldHistory] = useState<WorldHistoryItem[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [narrativeLogs, setNarrativeLogs] = useState<NarrativeEvent[]>([
@@ -183,6 +197,33 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const closeContextCard = useCallback(() => {
     setContextCard((prev) => (prev ? { ...prev, isOpen: false } : null));
   }, []);
+
+  const openHistoryInCard = useCallback(
+    (item: WorldHistoryItem) => {
+      const adjacent = getAdjacentBlocks(item.x, item.z, blocks);
+      setContextCard({
+        isOpen: true,
+        blockType: item.blockType,
+        x: item.x,
+        z: item.z,
+        adjacentBlocks: adjacent,
+        isLoading: false,
+        loreText: item.lore,
+        tier: item.tier || null,
+        similarityScores: null,
+        error: null,
+        backendOnline: true,
+        payload: {
+          block_type: item.blockType,
+          x: item.x,
+          z: item.z,
+          adjacent_blocks: adjacent,
+        },
+        timestamp: item.timestamp,
+      });
+    },
+    [blocks]
+  );
 
   const sendGenerateLoreRequest = useCallback(
     async (
@@ -228,7 +269,8 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       try {
-        const timeoutId = setTimeout(() => controller.abort(), 7000);
+        // Extended timeout (25s) to allow real Groq Llama 3.3 70B & Ollama Gemma 2 2B generations
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
 
         const response = await fetch("http://localhost:8000/generate-lore", {
           method: "POST",
@@ -254,10 +296,12 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (typeof data === "string") {
             loreResult = data;
           } else if (typeof data === "object" && data !== null) {
+            // Prioritize actual generated lore
             loreResult =
-              data.dummy_lore ||
               data.lore ||
+              data.dummy_lore ||
               data.text ||
+              data.response ||
               data.generated_lore ||
               data.narrative ||
               data.story ||
@@ -290,6 +334,29 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
 
         addNarrative(`[${x}, ${z}] ${loreResult}`, blockType, tier);
+
+        // Append to World History sidebar (newest first)
+        const truncated =
+          loreResult.length > 115
+            ? loreResult.slice(0, 112).trim() + "..."
+            : loreResult;
+
+        const historyItem: WorldHistoryItem = {
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          blockType,
+          x,
+          z,
+          lore: loreResult,
+          truncatedLore: truncated,
+          tier: tier || (blockType === "Mountain" ? "Cloud (Groq Llama 3.3 70B)" : "Local (Gemma 2 2B)"),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+        };
+
+        setWorldHistory((prev) => [historyItem, ...prev]);
       } catch (err: any) {
         if (err.name === "AbortError" && controller.signal.aborted) {
           return;
@@ -312,6 +379,29 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
 
         addNarrative(`[${x}, ${z}] ${fallbackText}`, blockType, "Offline Fallback");
+
+        // Append fallback entry to World History sidebar as well
+        const truncatedFallback =
+          fallbackText.length > 115
+            ? fallbackText.slice(0, 112).trim() + "..."
+            : fallbackText;
+
+        const fallbackItem: WorldHistoryItem = {
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          blockType,
+          x,
+          z,
+          lore: fallbackText,
+          truncatedLore: truncatedFallback,
+          tier: "Offline Fallback Tier",
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+        };
+
+        setWorldHistory((prev) => [fallbackItem, ...prev]);
       }
     },
     [addNarrative]
@@ -393,9 +483,11 @@ export const GridProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeBlock,
         clearGrid,
         narrativeLogs,
+        worldHistory,
         contextCard,
         closeContextCard,
         retryGenerateLore,
+        openHistoryInCard,
       }}
     >
       {children}

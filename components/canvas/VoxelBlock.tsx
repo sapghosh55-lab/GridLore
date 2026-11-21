@@ -12,7 +12,7 @@ interface VoxelBlockProps {
 }
 
 export const VoxelBlock: React.FC<VoxelBlockProps> = ({ x, z, type }) => {
-  const groupRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<any>(null);
   const scaleRef = useRef(0);
 
   // Smooth pop-in spawn animation

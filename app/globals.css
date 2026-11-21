@@ -33,3 +33,30 @@ body {
   background: #8a2be2;
 }
 
+/* Sleek Neon Purple Scrollbar for Context Card and World History */
+.sleek-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 43, 226, 0.55) #0e0f17;
+}
+
+.sleek-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.sleek-scrollbar::-webkit-scrollbar-track {
+  background: rgba(14, 15, 23, 0.75);
+  border-radius: 4px;
+}
+
+.sleek-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(138, 43, 226, 0.45);
+  border-radius: 4px;
+  border: 1px solid rgba(138, 43, 226, 0.25);
+  transition: all 0.2s ease-in-out;
+}
+
+.sleek-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #8a2be2;
+  box-shadow: 0 0 10px rgba(138, 43, 226, 0.85);
+}
