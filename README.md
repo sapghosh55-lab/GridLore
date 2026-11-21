@@ -1,166 +1,138 @@
-<div align="center">
+# 🌌 GridLore: Spatial Narrative Engine
 
-# 🌌 GridLore
-### Build a world. Let the world tell its story.
-
-A spatial storytelling engine where the geography you sculpt becomes the prompt for the narrative that follows.
-
-**GeNarrative Clash 2026**  
-**Track:** Narrative & Screenplay  
-**Submission Stage:** 50% Pre-Build
-
-</div>
+**A GeNarrative Clash 2026 Hackathon Project**  
+**Organized by:** GFG Student Chapter — Techno India University, Kolkata  
+**Track:** Empowering the Creative Artist (Open Track) — *Narrative & Screenplay*  
+**Status:** Complete Hackathon Prototype (100% Build)
 
 ---
 
-## ✨ The Idea
-
-A tavern beside a mountain is not just a layout choice—it is a story seed.
-
-**GridLore** is a browser-based world-building prototype that turns spatial composition into narrative context. Instead of writing a prompt in a blank chat box, the creator physically designs the world on an interactive 3D grid. Each placed object, terrain shift, and neighbor relationship influences the story, mood, and lore that emerge.
-
-This project explores a new creative workflow:
-
-- The human remains the architect of the world.
-- The system acts as a narrative co-pilot.
-- AI responds to spatial meaning, not just text.
-- Storytelling begins from place, not from a prompt alone.
-
-> The map becomes the memory.  
-> The world becomes the prompt.
+## 🔗 Quick Links
+* **Live Web App (Vercel):** `[Add your Vercel URL here]`
+* **Backend API Docs (Render):** `[Add your Render URL/docs here]`
+* **Demo Video:** `[Add your Demo Video URL here]`
 
 ---
 
-## 🎯 Why this fits the theme
+## 📖 The Concept
 
-This project sits at the intersection of human creativity and generative AI.
+**GridLore** is an interactive, browser-based 3D world-building canvas where the geography you sculpt directly drives the story that is written. Built as a generative co-pilot for indie game developers, tabletop Dungeon Masters, and fantasy authors, GridLore eliminates the friction of typing repetitive prompts into chatbots.
 
-GridLore does not replace the author. It scaffolds the creative process:
+Instead of describing your map in a text box, you physically place terrain and structure blocks (Taverns, Mountains, Forests) onto a 3D voxel grid. The engine automatically reads the exact `[x, z]` coordinates and neighboring biomes to generate grounded, coordinate-aware lore, NPC rumors, and regional histories in real time.
 
-- You decide what exists in the world.
-- You decide how the world is structured.
-- The AI helps interpret the resulting narrative possibilities.
+## 🎯 Theme Alignment: *"Where GenAI Meets Human Creativity"*
 
-This makes the tool collaborative, intentional, and spatially grounded—turning world design into a story-generation interface.
+GridLore never replaces the creator—it provides intelligent narrative scaffolding. The human remains 100% the architect, making every spatial, structural, and aesthetic decision on the map. GenAI acts strictly as the historian and continuity assistant, keeping the world's lore physically consistent with the geography the creator designed.
 
 ---
 
-## 🧠 What is currently built
+## ✨ Key Features
 
-This repository contains the structural foundation and routing architecture for the prototype.
-
-### Frontend
-- 10×10 isometric voxel-style world canvas
-- React + Next.js interface
-- 3D block placement using React Three Fiber
-- Dark neon UI with cinematic visual styling
-- Context card that reacts to placed elements
-
-### Backend
-- FastAPI server
-- Semantic routing system using sentence-transformers
-- Cosine similarity-based classification of incoming world context
-- Simulated “fast lane” and “deep lore” response paths
-
-### Demo logic
-- A tavern or local settlement triggers a lightweight, immediate narrative response.
-- A mountain, ruins, or larger world-building pattern triggers a more layered narrative path.
-- The routing logic is currently a working prototype layer, designed to support final AI model integration.
+* **3D Isometric Voxel Canvas:** Built with Next.js 14 and React Three Fiber, featuring unobstructed natural ambient lighting (no fog of war or pitch-black obscures) wrapped in a sleek dark-mode UI with neon purple (`#8a2be2`) and cyan (`#00ffff`) accents.
+* **Spatial Context Detection ($O(1)$ Scaling):** Every block placement automatically extracts `[x, z]` coordinates and immediate `adjacent_blocks`, keeping prompt token sizes constant whether the grid has 5 blocks or 100.
+* **Dual-Tier Semantic LLM Router:** Powered by `sentence-transformers/all-MiniLM-L6-v2` and NumPy cosine similarity inside FastAPI to classify creative intent in milliseconds before touching a generative model.
+* **Hybrid Local + Cloud AI Pipeline:**
+  * **Tier 1 (Fast / Local):** Routes quick, localized NPC dialogue and rumors to **Gemma 2 2B via Ollama** for instant, zero-cost generation (with an automatic cloud fallback to Groq's **Llama 3.1 8B Instant** when deployed on the web).
+  * **Tier 2 (Heavy / Cloud):** Routes complex, 500-year geographical histories to **Groq (`llama-3.3-70b-versatile`)** for sub-second, high-depth worldbuilding.
+* **Floating Context Card & World History Log:** Displays live generated lore with routing tier badges and maintains a chronological World History sidebar that acts as a living world bible.
 
 ---
 
-## 🏗️ Tech Stack
+## 🏗️ System Architecture
 
-### Frontend
-- Next.js 14
-- React
-- Tailwind CSS
-- Three.js
-- React Three Fiber
-- Drei
-
-### Backend
-- Python
-- FastAPI
-- Uvicorn
-- SentenceTransformers
-- NumPy
+```text
+[3D Voxel Grid (Next.js + R3F)]
+        │  POST /generate-lore { block_type, x, z, adjacent_blocks }
+        ▼
+[FastAPI Backend Gateway]
+        │  Embed & Cosine Similarity (all-MiniLM-L6-v2)
+        ▼
+  ┌─────┴─────────────────────────────┐
+  ▼                                   ▼
+[Tier 1: Fast Lane]            [Tier 2: Heavy Lane]
+Local Ollama (gemma:2b)        Groq Cloud API
+*(Cloud Fallback:              (llama-3.3-70b-versatile)
+ Llama 3.1 8B Instant)*        Deep 500-Year World History
+Quick NPC Rumors                      │
+  │                                   │
+  └─────┬─────────────────────────────┘
+        ▼
+[Context Card + World History Sidebar]
+```
 
 ---
 
-## 🚀 Run locally
+## 🛠️ Tech Stack
 
-You’ll need two terminals running side by side: one for the backend, one for the frontend.
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend & 3D Engine** | Next.js 14 (App Router), Tailwind CSS, Three.js, React Three Fiber, Drei |
+| **Backend & API** | Python 3, FastAPI, Uvicorn |
+| **Semantic Routing** | Hugging Face `sentence-transformers` (`all-MiniLM-L6-v2`), NumPy |
+| **Generative AI Models** | Ollama (`gemma:2b`), Groq API (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) |
+| **Deployment** | Vercel (Frontend), Render (Backend) |
 
-### 1) Start the backend
+---
+
+## 💻 Running Locally
+
+### Prerequisites
+* **Node.js** (v18+)
+* **Python** (3.10+)
+* **Groq API Key** (from [console.groq.com](https://console.groq.com))
+* **Ollama** (optional for local Tier 1): Install from [ollama.com](https://ollama.com) and run `ollama pull gemma:2b`
+
+### 1. Start the Backend (FastAPI)
 ```bash
 cd backend
-pip install fastapi uvicorn sentence-transformers numpy
+pip install -r requirements.txt
+```
+
+Create a `.env` file inside the `backend` folder:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+Run the FastAPI server:
+```bash
 uvicorn main:app --reload
 ```
+*Backend runs on `http://localhost:8000` (Swagger UI at `http://localhost:8000/docs`).*
 
-Backend runs at:
-```bash
-http://localhost:8000
-```
-
-### 2) Start the frontend
+### 2. Start the Frontend (Next.js)
+Open a second terminal:
 ```bash
 cd frontend
 npm install
+```
+
+Create a `.env.local` file inside the `frontend` folder (optional for local dev):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+Run the development server:
+```bash
 npm run dev
 ```
-
-Frontend runs at:
-```bash
-http://localhost:3000
-```
-
-### 3) Use the app
-- Select a block from the toolbar
-- Place it on the grid
-- Observe the context card update based on spatial choices and routed intent
+*Frontend runs on `http://localhost:3000`.*
 
 ---
 
-## 🔜 Next phase: live sprint
+## 🚀 Deployment Overview
 
-The final build will move beyond semantic classification into real generative storytelling.
-
-### Planned integrations
-- **Tier 1:** Local Ollama + Gemma 2 2B
-  - for fast dialogue and micro-lore generation
-- **Tier 2:** Groq Llama 3.3 70B API
-  - for deeper world history and large-scale narrative output
-- **Prompt engineering**
-  - incorporate spatial coordinates, nearby elements, and biome logic for richer continuity
-
-The goal is to transform GridLore from a world-building prototype into a living narrative engine that understands place, context, and story continuity.
+* **Backend (Render):** Deployed as a Python Web Service with start command `uvicorn main:app --host 0.0.0.0 --port $PORT` and `GROQ_API_KEY` set in Environment Variables. If local Ollama is unreachable in the cloud, Tier 1 gracefully falls back to Groq's `llama-3.1-8b-instant`.
+* **Frontend (Vercel):** Deployed directly from GitHub with `NEXT_PUBLIC_API_URL` pointing to the live Render backend URL.
 
 ---
 
-## 🏁 Project status
+## 🔮 Future Scope
 
-This is a 50% pre-build submission for the hackathon, focused on:
-
-- interaction design
-- spatial storytelling concept
-- architecture and routing logic
-- prototype demonstration of AI-assisted narrative response generation
-
-We are building the foundation for the final live sprint.
+* **Persistent Vector Memory:** Store every generated tile in Qdrant/Chroma so new locations dynamically reference factions, characters, and past events across massive maps.
+* **Game Engine Plugins & Exports:** One-click export to JSON, Markdown, and Twine, plus native plugins for Unity and Unreal Engine.
+* **Massive World Scaling:** Upgrade rendering to Three.js `InstancedMesh` with custom 3D GLTF assets and multi-level elevation.
+* **Non-Destructive Human Editing & Co-Op:** Allow authors to manually edit/lock lore entries as ground truth and collaborate in real time via WebSockets.
 
 ---
 
-## ❤️ Built for
-
-**GeNarrative Clash 2026**  
-**Narrative & Screenplay Track**
-
----
-
-<div align="center">
-
-**Shape the world. Trigger the story.**
-
-</div>
+*Built with ❤️ for **GeNarrative Clash 2026** — GFG Student Chapter, Techno India University.*
